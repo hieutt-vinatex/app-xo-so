@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="vi" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#17CB74" />
+    <meta
+      name="description"
+      content="Thống kê thời gian thực 2 số cuối giải đặc biệt XSMB. Chỉ dùng cho mục đích thống kê, không dự đoán kết quả."
+    />
+    <title>Thống kê GĐB XSMB — Realtime</title>
+    <script>
+      // Apply persisted theme before paint to avoid a flash.
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t === "dark") document.documentElement.classList.replace("light", "dark");
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

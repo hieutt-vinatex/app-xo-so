@@ -1,0 +1,21 @@
+# Optional local orchestration. Backend runs a single Uvicorn worker (in-memory
+# poller/cache/broker). Frontend is served by Nginx which proxies /api with
+# buffering disabled so SSE is delivered without delay.
+services:
+  backend:
+    build: .
+    environment:
+      APP_ENV: production
+      CORS_ORIGINS: "http://localhost:8080"
+      REALTIME_ENABLED: "true"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
