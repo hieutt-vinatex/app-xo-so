@@ -5,6 +5,12 @@ export default {
   theme: {
     extend: {
       colors: {
+        lotto: {
+          red: "#C92A2A",
+          orange: "#EA580C",
+          gold: "#D99A13",
+          navy: "#172033",
+        },
         brand: {
           green: "#17CB74",
           teal: "#1BB5A2",
@@ -12,7 +18,7 @@ export default {
           blue: "#347CFE",
         },
         surface: {
-          bg: "#F5F7FA",
+          bg: "#F7F6F2",
           card: "#FFFFFF",
         },
         ink: {
@@ -36,7 +42,7 @@ export default {
       },
       backgroundImage: {
         "brand-gradient":
-          "linear-gradient(135deg, #17CB74 0%, #25A5D3 55%, #347CFE 100%)",
+          "linear-gradient(135deg, #C92A2A 0%, #EA580C 55%, #D99A13 100%)",
       },
       fontFamily: {
         sans: [

@@ -23,10 +23,11 @@ export function RangeSelector({ value, onChange }: RangeSelectorProps): JSX.Elem
             aria-selected={active}
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(days)}
+            style={active ? { backgroundColor: "#C92A2A", color: "#FFFFFF" } : undefined}
             className={classNames(
-              "px-4 py-1.5 text-sm font-medium rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue",
+              "px-3 sm:px-4 py-1.5 text-sm font-medium rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lotto-red",
               active
-                ? "bg-brand-gradient text-white shadow-sm"
+                ? "bg-lotto-red text-white shadow-sm"
                 : "text-ink-soft dark:text-slate-300 hover:text-ink dark:hover:text-white",
             )}
           >

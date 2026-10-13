@@ -31,14 +31,13 @@ export function EChart({
   // (Re)initialize the instance. Re-inits when themeKey changes.
   useEffect(() => {
     if (!ref.current) return;
-    const reduceMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const chart = echarts.init(ref.current, undefined, {
       renderer: "canvas",
     });
     chartRef.current = chart;
-    chart.setOption({ animation: !reduceMotion, ...option });
+    // Instant marks keep realtime updates and screenshot/export output stable;
+    // the dashboard does not rely on motion to communicate change.
+    chart.setOption({ animation: false, ...option });
 
     const observer = new ResizeObserver(() => chart.resize());
     observer.observe(ref.current);

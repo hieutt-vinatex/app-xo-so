@@ -1,4 +1,4 @@
-"""Descriptive statistics over the collected special-prize records.
+"""Descriptive statistics over collected two-digit prize outcomes.
 
 Everything here is pure and deterministic: given the same records and the same
 number of attempted days it always yields the same output, including stable
@@ -23,7 +23,7 @@ ALL_NUMBERS: list[str] = [f"{n:02d}" for n in range(100)]
 class ValidRecord:
     """A successfully parsed record used as statistics input."""
 
-    gdb: str       # "00".."99"
+    gdb: str       # trailing value "00".."99" (legacy field name)
     date_iso: str  # YYYY-MM-DD
 
 
@@ -31,11 +31,17 @@ def _round(value: float, ndigits: int = 2) -> float:
     return round(value, ndigits)
 
 
-def compute_statistics(records: list[ValidRecord], attempted_days: int) -> Statistics:
+def compute_statistics(
+    records: list[ValidRecord],
+    attempted_days: int,
+    *,
+    expected_results_per_day: int = 1,
+) -> Statistics:
     """Compute the full statistics bundle from valid records.
 
-    ``attempted_days`` is the number of calendar days we tried to collect, used
-    for the collection success rate (valid records / attempted days).
+    ``attempted_days`` is the number of calendar days we tried to collect.
+    ``expected_results_per_day`` keeps coverage comparable across prizes with
+    different numbers of results (for example G3 has six values per draw).
     """
     total = len(records)
 
@@ -102,10 +108,21 @@ def compute_statistics(records: list[ValidRecord], attempted_days: int) -> Stati
     )
 
     unique_numbers = sum(1 for f in frequencies if f.count > 0)
-    success_rate = _round((total / attempted_days) * 100) if attempted_days else 0.0
+    available_draws = len({record.date_iso for record in records})
+    expected_results = attempted_days * expected_results_per_day
+    success_rate = (
+        _round(min(1.0, total / expected_results) * 100)
+        if expected_results
+        else 0.0
+    )
+    average_per_draw = _round(total / available_draws) if available_draws else 0.0
 
     return Statistics(
         total_results=total,
+        available_draws=available_draws,
+        expected_results=expected_results,
+        expected_results_per_draw=expected_results_per_day,
+        average_results_per_draw=average_per_draw,
         unique_numbers=unique_numbers,
         collection_success_rate=success_rate,
         frequencies=frequencies,

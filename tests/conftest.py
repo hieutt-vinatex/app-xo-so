@@ -37,6 +37,27 @@ def gdb_html(value: str) -> str:
     """
 
 
+def lottery_html(gdb_value: str) -> str:
+    """Build a complete 27-number XSMB result page."""
+    values = {
+        "g1": ["54279"],
+        "g2": ["01658", "99875"],
+        "g3": ["58777", "33062", "70578", "29945", "03967", "90070"],
+        "g4": ["1440", "4471", "5218", "7377"],
+        "g5": ["8274", "4475", "3487", "5399", "5678", "2717"],
+        "g6": ["719", "114", "363"],
+        "g7": ["78", "95", "84", "51"],
+    }
+    spans = [f'<span class="v-gdb">{gdb_value}</span>']
+    spans.append(f'<span class="v-g1">{values["g1"][0]}</span>')
+    for prize in ("g2", "g3", "g4", "g5", "g6", "g7"):
+        spans.extend(
+            f'<span class="v-{prize}-{index}">{value}</span>'
+            for index, value in enumerate(values[prize])
+        )
+    return f'<html><body><div class="result">{"".join(spans)}</div></body></html>'
+
+
 class FakeFetcher:
     """Drop-in replacement for :class:`app.utils.fetcher.Fetcher`.
 
@@ -61,7 +82,7 @@ class FakeFetcher:
 
 
 def ok_result(value: str) -> FetchResult:
-    return FetchResult(status=FetchStatus.OK, body=gdb_html(value), http_status=200)
+    return FetchResult(status=FetchStatus.OK, body=lottery_html(value), http_status=200)
 
 
 def status_result(status: FetchStatus, http_status: int | None = None) -> FetchResult:

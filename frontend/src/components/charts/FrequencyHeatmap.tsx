@@ -69,7 +69,7 @@ function build(frequencies: FrequencyItem[], theme: Theme): EChartsOption {
       left: "center",
       bottom: 0,
       textStyle: { color: t.label },
-      inRange: { color: ["#EAF2FF", "#25A5D3", "#17CB74"] },
+      inRange: { color: ["#FFF7ED", "#FDBA74", "#C92A2A"] },
     },
     series: [
       {

@@ -1,5 +1,5 @@
 from app.utils.parser import ParseStatus, parse_gdb
-from tests.conftest import gdb_html
+from tests.conftest import gdb_html, lottery_html
 
 
 def test_parse_valid():
@@ -37,3 +37,13 @@ def test_single_digit_is_invalid():
     r = parse_gdb('<span class="v-gdb">7</span>')
     assert not r.ok
     assert r.status is ParseStatus.INVALID_DIGITS
+
+
+def test_parse_complete_draw_keeps_every_full_value():
+    r = parse_gdb(lottery_html("53618"))
+    assert r.ok and r.complete
+    assert r.result_count == 27
+    assert r.gdb == "18"
+    assert r.prizes["db"] == ("53618",)
+    assert r.prizes["g2"] == ("01658", "99875")
+    assert r.prizes["g7"] == ("78", "95", "84", "51")

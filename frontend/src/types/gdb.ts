@@ -1,7 +1,14 @@
 /** Shared types mirroring the backend REST/SSE response model (camelCase). */
 
+export type PrizeKey = "db" | "g1" | "g2" | "g3" | "g4" | "g5" | "g6" | "g7";
+export type PrizeScope = "all" | PrizeKey;
+
+export type PrizeResults = Record<PrizeKey, string[]>;
+
 export interface GdbRecord {
-  gdb: string; // "00".."99"
+  gdb: string | null; // backward-compatible two-digit special prize
+  prizes: PrizeResults; // full values exactly as published
+  drawComplete: boolean;
   date: string; // ISO YYYY-MM-DD
   dateLabel: string; // DD-MM
   dayName: string; // Vietnamese weekday
@@ -30,6 +37,10 @@ export interface EvenOdd {
 
 export interface Statistics {
   totalResults: number;
+  availableDraws: number;
+  expectedResults: number;
+  expectedResultsPerDraw: number;
+  averageResultsPerDraw: number;
   uniqueNumbers: number;
   collectionSuccessRate: number;
   frequencies: FrequencyItem[];
@@ -50,6 +61,8 @@ export interface Meta {
   availableRecords: number;
   failedCount: number;
   missingDates: string[];
+  incompleteDates: string[];
+  availableNumbers: number;
   errors: RecordError[];
   partial: boolean;
   cached: boolean;
@@ -67,6 +80,7 @@ export interface Meta {
 export interface SnapshotResponse {
   data: GdbRecord[];
   statistics: Statistics;
+  statisticsByPrize: Record<PrizeKey, Statistics>;
   meta: Meta;
 }
 

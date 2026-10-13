@@ -12,9 +12,11 @@ export function PartialWarning({ meta }: { meta: Meta }): JSX.Element | null {
       <div>
         <p className="font-medium">Dữ liệu chưa đầy đủ</p>
         <p className="mt-0.5">
-          Thiếu {meta.failedCount}/{meta.requestedDays} ngày (
-          {meta.availableRecords} bản ghi hợp lệ). Biểu đồ vẫn hiển thị phần dữ liệu
-          đã thu thập được.
+          {meta.failedCount > 0 ? `Thiếu ${meta.failedCount}/${meta.requestedDays} ngày. ` : ""}
+          {meta.incompleteDates.length > 0
+            ? `${meta.incompleteDates.length} kỳ đang cập nhật chưa đủ 27 số. `
+            : ""}
+          Biểu đồ đang dùng {meta.availableNumbers.toLocaleString("vi-VN")} số đã thu thập.
         </p>
       </div>
     </div>

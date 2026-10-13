@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { Card } from "./ui/Card";
 import type { Statistics } from "../types/gdb";
-import { SnowIcon, TrophyIcon } from "./Icons";
+import { TrophyIcon } from "./Icons";
 import { formatPercent } from "../utils/format";
 
 interface KpiCardProps {
@@ -43,13 +43,23 @@ interface KpiCardsProps {
 
 export function KpiCards({ stats, realtimeHint }: KpiCardsProps): JSX.Element {
   const hottest = stats.topNumbers[0];
-  const coldest = stats.coldNumbers[0];
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-      <KpiCard label="Kết quả hợp lệ" value={stats.totalResults} accent="blue" hint="bản ghi" />
       <KpiCard
-        label="Số khác nhau"
+        label="Số đã ghi nhận"
+        value={stats.totalResults.toLocaleString("vi-VN")}
+        accent="blue"
+        hint={`trên ${stats.expectedResults.toLocaleString("vi-VN")} số dự kiến`}
+      />
+      <KpiCard
+        label="Kỳ có dữ liệu"
+        value={stats.availableDraws}
+        accent="cyan"
+        hint={`${stats.averageResultsPerDraw} số/kỳ`}
+      />
+      <KpiCard
+        label="Độ phủ 00–99"
         value={stats.uniqueNumbers}
         accent="cyan"
         hint="trên tổng 100 số"
@@ -60,13 +70,6 @@ export function KpiCards({ stats, realtimeHint }: KpiCardsProps): JSX.Element {
         icon={<TrophyIcon />}
         accent="green"
         hint={hottest ? `${hottest.count} lần · ${formatPercent(hottest.percentage)}` : "chưa có"}
-      />
-      <KpiCard
-        label="Ít/chưa xuất hiện"
-        value={coldest ? coldest.number : "--"}
-        icon={<SnowIcon />}
-        accent="warning"
-        hint={coldest ? `${coldest.count} lần` : "chưa có"}
       />
       <KpiCard
         label="Tỷ lệ thu thập"

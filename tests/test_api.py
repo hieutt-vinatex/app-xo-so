@@ -59,7 +59,9 @@ def test_days_default_is_30():
     body = r.json()
     assert body["meta"]["requestedDays"] == 30
     assert len(body["data"]) == 30
-    assert body["statistics"]["totalResults"] == 30
+    assert body["statistics"]["totalResults"] == 30 * 27
+    assert body["statisticsByPrize"]["g3"]["totalResults"] == 30 * 6
+    assert len(body["data"][0]["prizes"]["g7"]) == 4
 
 
 @pytest.mark.parametrize("days", [30, 60, 90])

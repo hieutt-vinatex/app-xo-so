@@ -1,3 +1,14 @@
+<!-- run backend -->
+
+./venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+
+<!-- run frontend -->
+
+cd /mnt/c/Users/Admin/Desktop/app-xo-so/frontend
+npm run dev
+
+
 # Thống kê GĐB XSMB — Realtime Dashboard
 
 Ứng dụng full‑stack thu thập, **truyền theo thời gian thực (SSE)**, thống kê và trực quan hóa **2 số cuối giải đặc biệt xổ số miền Bắc (XSMB)**.

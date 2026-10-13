@@ -9,7 +9,7 @@ Python attributes stay snake_case.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -27,8 +27,28 @@ class CamelModel(BaseModel):
     )
 
 
+class PrizeResults(CamelModel):
+    """Full published values for every prize in one draw."""
+
+    db: List[str] = Field(default_factory=list)
+    g1: List[str] = Field(default_factory=list)
+    g2: List[str] = Field(default_factory=list)
+    g3: List[str] = Field(default_factory=list)
+    g4: List[str] = Field(default_factory=list)
+    g5: List[str] = Field(default_factory=list)
+    g6: List[str] = Field(default_factory=list)
+    g7: List[str] = Field(default_factory=list)
+
+
 class GdbRecord(CamelModel):
-    gdb: str = Field(..., description='Two-char special prize "00".."99"')
+    gdb: Optional[str] = Field(
+        default=None,
+        description='Backward-compatible two-char special prize "00".."99"',
+    )
+    prizes: PrizeResults
+    draw_complete: bool = Field(
+        description="True when all 27 expected prize numbers were parsed"
+    )
     date: str = Field(..., description="ISO date YYYY-MM-DD")
     date_label: str = Field(..., description="DD-MM label")
     day_name: str = Field(..., description="Vietnamese weekday name")
@@ -57,6 +77,10 @@ class EvenOdd(CamelModel):
 
 class Statistics(CamelModel):
     total_results: int
+    available_draws: int
+    expected_results: int
+    expected_results_per_draw: int
+    average_results_per_draw: float
     unique_numbers: int
     collection_success_rate: float
     frequencies: List[FrequencyItem]
@@ -77,6 +101,8 @@ class Meta(CamelModel):
     available_records: int
     failed_count: int
     missing_dates: List[str]
+    incomplete_dates: List[str] = Field(default_factory=list)
+    available_numbers: int = 0
     errors: List[RecordError] = Field(default_factory=list)
     partial: bool
     cached: bool
@@ -93,7 +119,10 @@ class Meta(CamelModel):
 
 class SnapshotResponse(CamelModel):
     data: List[GdbRecord]
+    # Aggregate of all 27 prize numbers per draw.
     statistics: Statistics
+    # Same calculation at each prize grain; keys: db, g1 ... g7.
+    statistics_by_prize: Dict[str, Statistics]
     meta: Meta
 
 

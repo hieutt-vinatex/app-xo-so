@@ -1,7 +1,7 @@
 """Centralized realtime service: one poller for the whole application.
 
 Exactly one background task watches *today's* results URL at high frequency.
-When (and only when) the parsed special prize changes, it bumps the snapshot
+When (and only when) any parsed prize value changes, it bumps the snapshot
 version, rebuilds the 30/60/90-day snapshots and broadcasts an ``update`` to
 every SSE subscriber via the :class:`EventBroker`. There is never a crawler
 per browser or per SSE connection.
@@ -166,12 +166,15 @@ class RealtimeService:
             now = now_in_tz(self._tz)
             self.state.last_source_check_at = now
 
-            if outcome.ok and outcome.gdb is not None:
+            if outcome.ok and outcome.result_count > 0:
                 self.state.last_successful_check_at = now
                 self.state.last_error = None
                 self._consecutive_failures = 0
+                previous_signature = (
+                    self._today_outcome.signature if self._today_outcome is not None else None
+                )
                 changed = (
-                    outcome.gdb != self.state.current_gdb
+                    outcome.signature != previous_signature
                     or self.state.current_date_iso != to_iso(today)
                 )
                 self._today_outcome = outcome
@@ -181,8 +184,11 @@ class RealtimeService:
                     self.state.last_changed_at = now
                     self.state.snapshot_version += 1
                     logger.info(
-                        "GĐB changed value=%s version=%d",
-                        outcome.gdb, self.state.snapshot_version,
+                        "XSMB result changed count=%d complete=%s gdb=%s version=%d",
+                        outcome.result_count,
+                        outcome.complete,
+                        outcome.gdb,
+                        self.state.snapshot_version,
                     )
                     await self._rebuild_and_broadcast()
                 return changed, False

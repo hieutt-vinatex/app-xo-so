@@ -66,3 +66,18 @@ def test_empty_input_is_safe():
     assert stats.collection_success_rate == 0.0
     assert stats.even_odd.even == 0 and stats.even_odd.odd == 0
     assert all(f.count == 0 for f in stats.frequencies)
+
+
+def test_coverage_uses_expected_numbers_per_draw():
+    recs = _recs([
+        ("01", "2026-07-27"),
+        ("02", "2026-07-27"),
+        ("03", "2026-07-28"),
+        ("04", "2026-07-28"),
+    ])
+    stats = compute_statistics(recs, attempted_days=2, expected_results_per_day=2)
+    assert stats.total_results == 4
+    assert stats.available_draws == 2
+    assert stats.expected_results == 4
+    assert stats.average_results_per_draw == 2.0
+    assert stats.collection_success_rate == 100.0

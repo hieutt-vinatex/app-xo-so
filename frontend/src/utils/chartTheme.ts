@@ -2,12 +2,12 @@ import type { Theme } from "./theme";
 
 /** Design-system palette shared by all charts (accessible in light + dark). */
 export const palette = {
-  green: "#17CB74",
-  teal: "#1BB5A2",
-  cyan: "#25A5D3",
-  blue: "#347CFE",
-  warning: "#F59E0B",
-  danger: "#E5484D",
+  green: "#D99A13",
+  teal: "#B45309",
+  cyan: "#64748B",
+  blue: "#243653",
+  warning: "#EA580C",
+  danger: "#C92A2A",
   neutral: "#94A3B8",
 };
 
@@ -30,9 +30,9 @@ export function chartTheme(theme: Theme): ChartTheme {
       label: "#CBD5E1",
       tooltipBg: "#1E293B",
       tooltipText: "#F1F5F9",
-      bar: "#25A5D3",
-      barTop: "#17CB74",
-      scatter: "#347CFE",
+      bar: "#EA580C",
+      barTop: "#D99A13",
+      scatter: "#F87171",
     };
   }
   return {
@@ -41,8 +41,8 @@ export function chartTheme(theme: Theme): ChartTheme {
     label: "#6B7280",
     tooltipBg: "#FFFFFF",
     tooltipText: "#24272B",
-    bar: "#25A5D3",
-    barTop: "#17CB74",
-    scatter: "#347CFE",
+    bar: "#C92A2A",
+    barTop: "#D99A13",
+    scatter: "#C92A2A",
   };
 }

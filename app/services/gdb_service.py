@@ -1,4 +1,4 @@
-"""Data service: fetch, parse, cache and assemble GĐB snapshots.
+"""Data service: fetch, parse, cache and assemble full XSMB snapshots.
 
 Responsibilities:
 
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 
 from app.cache.simple_cache import SingleFlight, TTLCache
@@ -26,6 +26,7 @@ from app.realtime.state import RealtimeState
 from app.schemas.gdb import (
     GdbRecord,
     Meta,
+    PrizeResults,
     RecordError,
     SnapshotResponse,
 )
@@ -39,7 +40,7 @@ from app.utils.date_helper import (
     weekday_name_vi,
 )
 from app.utils.fetcher import ConditionalHeaders, Fetcher, FetchStatus
-from app.utils.parser import ParseStatus, parse_gdb
+from app.utils.parser import PRIZE_COUNTS, PRIZE_KEYS, ParseStatus, parse_gdb
 
 logger = logging.getLogger("app.gdb_service")
 
@@ -60,12 +61,29 @@ class DayOutcome:
     day: date
     source_url: str
     gdb: str | None = None
+    prizes: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    complete: bool = False
     ok: bool = False
     reason: str | None = None
+
+    def __post_init__(self) -> None:
+        # Compatibility for callers/tests that still construct an outcome with
+        # only the former two-digit ``gdb`` value.
+        if self.gdb is not None and not self.prizes:
+            self.prizes = {"db": (self.gdb,)}
 
     @property
     def date_iso(self) -> str:
         return to_iso(self.day)
+
+    @property
+    def result_count(self) -> int:
+        return sum(len(values) for values in self.prizes.values())
+
+    @property
+    def signature(self) -> tuple[tuple[str, tuple[str, ...]], ...]:
+        """Stable business signature used by the realtime change detector."""
+        return tuple((prize, self.prizes.get(prize, ())) for prize in PRIZE_KEYS)
 
 
 class GdbService:
@@ -94,8 +112,9 @@ class GdbService:
 
     async def _load_and_cache(self, day: date) -> DayOutcome:
         outcome = await self._load_day(day)
-        # Only cache successful outcomes so transient failures get retried.
-        if outcome.ok:
+        # Cache only a complete board. A live, partially published draw must be
+        # fetched again so newly arriving prize values are not hidden by TTL.
+        if outcome.ok and outcome.complete:
             self._history_cache.set(to_iso(day), outcome)
         return outcome
 
@@ -128,8 +147,15 @@ class GdbService:
 
     def _parse_body(self, day: date, url: str, body: str) -> DayOutcome:
         parsed = parse_gdb(body)
-        if parsed.ok and parsed.gdb is not None:
-            return DayOutcome(day=day, source_url=url, gdb=parsed.gdb, ok=True)
+        if parsed.ok:
+            return DayOutcome(
+                day=day,
+                source_url=url,
+                gdb=parsed.gdb,
+                prizes=parsed.prizes,
+                complete=parsed.complete,
+                ok=True,
+            )
         reason = (
             REASON_NO_RESULT
             if parsed.status is ParseStatus.MISSING_SELECTOR
@@ -169,29 +195,57 @@ class GdbService:
         self, days: int, outcomes: list[DayOutcome], state: RealtimeState
     ) -> SnapshotResponse:
         records: list[GdbRecord] = []
-        valid: list[ValidRecord] = []
+        valid_all: list[ValidRecord] = []
+        valid_by_prize: dict[str, list[ValidRecord]] = {
+            prize: [] for prize in PRIZE_KEYS
+        }
         errors: list[RecordError] = []
         missing: list[str] = []
+        incomplete: list[str] = []
 
         for outcome in outcomes:  # already ascending by date
-            if outcome.ok and outcome.gdb is not None:
+            if outcome.ok and outcome.result_count > 0:
+                prize_values = {
+                    prize: list(outcome.prizes.get(prize, ())) for prize in PRIZE_KEYS
+                }
                 records.append(
                     GdbRecord(
                         gdb=outcome.gdb,
+                        prizes=PrizeResults(**prize_values),
+                        draw_complete=outcome.complete,
                         date=outcome.date_iso,
                         date_label=to_label(outcome.day),
                         day_name=weekday_name_vi(outcome.day),
                         source_url=outcome.source_url,
                     )
                 )
-                valid.append(ValidRecord(gdb=outcome.gdb, date_iso=outcome.date_iso))
+                if not outcome.complete:
+                    incomplete.append(outcome.date_iso)
+                for prize, values in prize_values.items():
+                    for value in values:
+                        record = ValidRecord(gdb=value[-2:], date_iso=outcome.date_iso)
+                        valid_all.append(record)
+                        valid_by_prize[prize].append(record)
             else:
                 missing.append(outcome.date_iso)
                 errors.append(
                     RecordError(date=outcome.date_iso, reason=outcome.reason or "unknown")
                 )
 
-        statistics = compute_statistics(valid, attempted_days=days)
+        expected_all = sum(PRIZE_COUNTS.values())
+        statistics = compute_statistics(
+            valid_all,
+            attempted_days=days,
+            expected_results_per_day=expected_all,
+        )
+        statistics_by_prize = {
+            prize: compute_statistics(
+                valid_by_prize[prize],
+                attempted_days=days,
+                expected_results_per_day=PRIZE_COUNTS[prize],
+            )
+            for prize in PRIZE_KEYS
+        }
 
         any_cached = len(self._history_cache) > 0
         meta = Meta(
@@ -199,8 +253,10 @@ class GdbService:
             available_records=len(records),
             failed_count=len(errors),
             missing_dates=missing,
+            incomplete_dates=incomplete,
+            available_numbers=len(valid_all),
             errors=errors,
-            partial=len(errors) > 0,
+            partial=bool(errors or incomplete),
             cached=any_cached,
             stale=False,
             fetched_at=datetime.now(self._tz),
@@ -212,7 +268,12 @@ class GdbService:
             realtime_enabled=state.realtime_enabled,
             source=_source_host(self._settings.source_base_url),
         )
-        return SnapshotResponse(data=records, statistics=statistics, meta=meta)
+        return SnapshotResponse(
+            data=records,
+            statistics=statistics,
+            statistics_by_prize=statistics_by_prize,
+            meta=meta,
+        )
 
     # ------------------------------------------------------------------ #
     # Introspection

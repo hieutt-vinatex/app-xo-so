@@ -1,20 +1,46 @@
-"""HTML parsing for the XSMB special prize (giải đặc biệt).
+"""Parse a complete XSMB result board from the upstream HTML.
 
-The parser is deliberately strict: it extracts the last two digits of the
-``.v-gdb`` element and refuses to fabricate a record when the selector is
-missing or the text does not contain at least two digits.
+Every prize number is retained exactly as published. Descriptive statistics
+use its two trailing digits, but the parser never truncates the value stored in
+the daily result record.
 """
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from bs4 import BeautifulSoup
 
 _DIGITS_RE = re.compile(r"\d")
-_GDB_SELECTOR = ".v-gdb"
+
+# Stable domain order used by the API and frontend result boards.
+PRIZE_KEYS: tuple[str, ...] = ("db", "g1", "g2", "g3", "g4", "g5", "g6", "g7")
+PRIZE_COUNTS: dict[str, int] = {
+    "db": 1,
+    "g1": 1,
+    "g2": 2,
+    "g3": 6,
+    "g4": 4,
+    "g5": 6,
+    "g6": 3,
+    "g7": 4,
+}
+
+
+def _selectors(prize: str) -> tuple[str, ...]:
+    count = PRIZE_COUNTS[prize]
+    if prize == "db":
+        return (".v-gdb",)
+    if prize == "g1":
+        return (".v-g1",)
+    return tuple(f".v-{prize}-{index}" for index in range(count))
+
+
+PRIZE_SELECTORS: dict[str, tuple[str, ...]] = {
+    prize: _selectors(prize) for prize in PRIZE_KEYS
+}
 
 
 class ParseStatus(str, Enum):
@@ -25,33 +51,81 @@ class ParseStatus(str, Enum):
 
 @dataclass(frozen=True)
 class ParseResult:
-    """Outcome of parsing one results page."""
+    """Outcome of parsing one complete/partial results page."""
 
     status: ParseStatus
-    gdb: str | None = None  # exactly two chars "00".."99" when status == OK
-    raw: str | None = None  # raw selector text, for debugging/logging
+    prizes: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    raw: str | None = None
+    invalid_selectors: tuple[str, ...] = ()
 
     @property
     def ok(self) -> bool:
+        # During the live draw, prizes arrive progressively. Any valid number is
+        # useful and should be broadcast; ``complete`` indicates final coverage.
         return self.status is ParseStatus.OK
+
+    @property
+    def complete(self) -> bool:
+        return all(
+            len(self.prizes.get(prize, ())) == PRIZE_COUNTS[prize]
+            for prize in PRIZE_KEYS
+        )
+
+    @property
+    def result_count(self) -> int:
+        return sum(len(values) for values in self.prizes.values())
+
+    @property
+    def gdb(self) -> str | None:
+        """Backward-compatible two-digit special-prize value."""
+        values = self.prizes.get("db", ())
+        return values[0][-2:] if values else None
 
 
 def parse_gdb(html: str) -> ParseResult:
-    """Parse the two trailing digits of the special prize from a page.
+    """Parse every available XSMB prize number.
 
-    Returns a :class:`ParseResult`. Never raises for ordinary "bad HTML";
-    only genuinely unexpected input would bubble up.
+    The historical function name is retained to keep callers compatible.
+    Missing selectors are expected while a live draw is in progress. A page is
+    accepted when at least one selector contains two or more digits, and is
+    marked complete only when all 27 expected values are present.
     """
     soup = BeautifulSoup(html, "html.parser")
-    node = soup.select_one(_GDB_SELECTOR)
-    if node is None:
-        return ParseResult(status=ParseStatus.MISSING_SELECTOR)
+    prizes: dict[str, tuple[str, ...]] = {}
+    invalid: list[str] = []
+    raw_values: list[str] = []
+    saw_selector = False
 
-    raw_text = node.get_text(strip=True)
-    digits = "".join(_DIGITS_RE.findall(raw_text))
-    if len(digits) < 2:
-        return ParseResult(status=ParseStatus.INVALID_DIGITS, raw=raw_text)
+    for prize in PRIZE_KEYS:
+        values: list[str] = []
+        for selector in PRIZE_SELECTORS[prize]:
+            node = soup.select_one(selector)
+            if node is None:
+                continue
+            saw_selector = True
+            raw_text = node.get_text(strip=True)
+            raw_values.append(raw_text)
+            digits = "".join(_DIGITS_RE.findall(raw_text))
+            if len(digits) < 2:
+                invalid.append(selector)
+                continue
+            values.append(digits)
+        prizes[prize] = tuple(values)
 
-    # Keep exactly the last two digits as a zero-padded string.
-    gdb = digits[-2:]
-    return ParseResult(status=ParseStatus.OK, gdb=gdb, raw=raw_text)
+    result_count = sum(len(values) for values in prizes.values())
+    raw = " | ".join(raw_values) if raw_values else None
+    if result_count:
+        return ParseResult(
+            status=ParseStatus.OK,
+            prizes=prizes,
+            raw=raw,
+            invalid_selectors=tuple(invalid),
+        )
+    if saw_selector:
+        return ParseResult(
+            status=ParseStatus.INVALID_DIGITS,
+            prizes=prizes,
+            raw=raw,
+            invalid_selectors=tuple(invalid),
+        )
+    return ParseResult(status=ParseStatus.MISSING_SELECTOR, prizes=prizes)

@@ -29,7 +29,18 @@ export function isSnapshotResponse(value: unknown): value is SnapshotResponse {
   const v = value as Record<string, unknown>;
   if (!Array.isArray(v.data)) return false;
   if (typeof v.statistics !== "object" || v.statistics === null) return false;
+  if (typeof v.statisticsByPrize !== "object" || v.statisticsByPrize === null) return false;
   if (typeof v.meta !== "object" || v.meta === null) return false;
+  if (
+    v.data.some(
+      (record) =>
+        typeof record !== "object" ||
+        record === null ||
+        typeof (record as Record<string, unknown>).prizes !== "object",
+    )
+  ) {
+    return false;
+  }
   const meta = v.meta as Record<string, unknown>;
   return (
     typeof meta.requestedDays === "number" &&

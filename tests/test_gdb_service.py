@@ -28,6 +28,10 @@ async def test_build_snapshot_full_success(settings):
     assert snap.meta.failed_count == 0
     assert len(snap.data) == 30
     assert snap.data[0].gdb == "07"
+    assert snap.data[0].draw_complete is True
+    assert len(snap.data[0].prizes.g3) == 6
+    assert snap.statistics.total_results == 30 * 27
+    assert snap.statistics_by_prize["g7"].total_results == 30 * 4
     # ascending by date
     dates = [r.date for r in snap.data]
     assert dates == sorted(dates)

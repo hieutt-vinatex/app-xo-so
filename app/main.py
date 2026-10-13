@@ -83,12 +83,13 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
-        title="XSMB GĐB Realtime Dashboard API",
+        title="XSMB Realtime Results & Statistics API",
         description=(
-            "Thu thập, thống kê và phát trực tiếp 2 số cuối giải đặc biệt XSMB. "
+            "Thu thập đầy đủ ĐB, G1–G7; thống kê và phát trực tiếp tần suất "
+            "2 số cuối của từng số XSMB. "
             "Chỉ phục vụ mục đích thống kê, không dự đoán kết quả."
         ),
-        version="1.0.0",
+        version="2.0.0",
         lifespan=lifespan,
     )
     app.add_middleware(

@@ -1,22 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import type { GdbRecord } from "../types/gdb";
-import { formatIsoDate } from "../utils/format";
-import { ExternalIcon } from "./Icons";
+import type { GdbRecord, PrizeScope } from "../types/gdb";
+import { prizeLabel } from "../utils/prizes";
+import { PrizeResultsBoard } from "./PrizeResultsBoard";
 
 interface Props {
   records: GdbRecord[];
+  scope: PrizeScope;
   pageSize?: number;
 }
 
-/** History table, newest-first, with simple pagination. */
-export function HistoryTable({ records, pageSize = 10 }: Props): JSX.Element {
+/** Exact per-draw results, newest first, with compact pagination. */
+export function HistoryTable({ records, scope, pageSize = 5 }: Props): JSX.Element {
   const [page, setPage] = useState(0);
-  // Newest first (records arrive ascending).
   const ordered = useMemo(() => [...records].reverse(), [records]);
   const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
   const clampedPage = Math.min(page, pageCount - 1);
   const slice = ordered.slice(clampedPage * pageSize, clampedPage * pageSize + pageSize);
+
+  useEffect(() => setPage(0), [scope, pageSize]);
 
   if (records.length === 0) {
     return <p className="text-sm text-ink-soft dark:text-slate-400">Chưa có bản ghi nào.</p>;
@@ -24,69 +26,32 @@ export function HistoryTable({ records, pageSize = 10 }: Props): JSX.Element {
 
   return (
     <div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <caption className="sr-only">Lịch sử kết quả giải đặc biệt theo ngày, mới nhất trước</caption>
-          <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-ink-soft dark:text-slate-400 border-b border-line dark:border-slate-700">
-              <th scope="col" className="py-2 pr-3 font-medium">Ngày</th>
-              <th scope="col" className="py-2 pr-3 font-medium">Thứ</th>
-              <th scope="col" className="py-2 pr-3 font-medium">Kết quả</th>
-              <th scope="col" className="py-2 font-medium">Nguồn</th>
-            </tr>
-          </thead>
-          <tbody>
-            {slice.map((r) => (
-              <tr
-                key={r.date}
-                className="border-b border-line/70 dark:border-slate-700/60 last:border-0"
-              >
-                <td className="py-2 pr-3 tabular-nums text-ink dark:text-slate-200">
-                  {formatIsoDate(r.date)}
-                </td>
-                <td className="py-2 pr-3 text-ink-soft dark:text-slate-400">{r.dayName}</td>
-                <td className="py-2 pr-3">
-                  <span className="inline-flex h-7 min-w-[2rem] items-center justify-center rounded-md bg-brand-gradient px-2 font-bold text-white tabular-nums">
-                    {r.gdb}
-                  </span>
-                </td>
-                <td className="py-2">
-                  <a
-                    href={r.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-brand-blue hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue"
-                    aria-label={`Mở trang nguồn kết quả ngày ${formatIsoDate(r.date)}`}
-                  >
-                    Xem <ExternalIcon />
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-3">
+        {slice.map((record) => (
+          <PrizeResultsBoard key={record.date} record={record} scope={scope} compact />
+        ))}
       </div>
 
-      <div className="flex items-center justify-between mt-3 text-sm">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
         <span className="text-ink-soft dark:text-slate-400">
-          Trang {clampedPage + 1}/{pageCount} · {ordered.length} bản ghi
+          {prizeLabel(scope)} · trang {clampedPage + 1}/{pageCount} · {ordered.length} kỳ
         </span>
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            onClick={() => setPage((current) => Math.max(0, current - 1))}
             disabled={clampedPage === 0}
-            className="rounded-lg border border-line dark:border-slate-700 px-3 py-1 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue"
+            className="rounded-lg border border-line px-3 py-1.5 font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lotto-red"
           >
-            Trước
+            Trang trước
           </button>
           <button
             type="button"
-            onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
             disabled={clampedPage >= pageCount - 1}
-            className="rounded-lg border border-line dark:border-slate-700 px-3 py-1 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue"
+            className="rounded-lg border border-line px-3 py-1.5 font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lotto-red"
           >
-            Sau
+            Trang sau
           </button>
         </div>
       </div>

@@ -10,15 +10,29 @@
   body {
     @apply bg-surface-bg text-ink font-sans antialiased;
     font-feature-settings: "tnum" 0;
+    background-image:
+      radial-gradient(circle at 10% -10%, rgba(201, 42, 42, 0.08), transparent 28rem),
+      radial-gradient(circle at 100% 0%, rgba(217, 154, 19, 0.08), transparent 24rem);
+    background-attachment: fixed;
   }
 
   :root.dark body {
     @apply bg-slate-900 text-slate-100;
+    background-image:
+      radial-gradient(circle at 10% -10%, rgba(201, 42, 42, 0.14), transparent 30rem),
+      radial-gradient(circle at 100% 0%, rgba(217, 154, 19, 0.06), transparent 24rem);
   }
 
   /* Visible focus for keyboard users everywhere. */
   :focus-visible {
     outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .prize-navigation {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(201, 42, 42, 0.35) transparent;
   }
 }
 

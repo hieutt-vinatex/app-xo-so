@@ -30,21 +30,24 @@ export function DashboardHeader({
   refreshIsError,
 }: Props): JSX.Element {
   return (
-    <header className="rounded-xl3 bg-surface-card dark:bg-slate-800/70 border border-line dark:border-slate-700 shadow-card overflow-hidden">
-      <div className="h-1.5 bg-brand-gradient" />
+    <header className="overflow-hidden rounded-xl3 border border-line bg-surface-card shadow-card dark:border-slate-700 dark:bg-slate-800/70">
+      <div className="h-1 bg-lotto-red" />
       <div className="p-4 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl2 bg-brand-gradient grid place-items-center text-white font-bold">
-                ĐB
+              <div
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl2 bg-lotto-red text-sm font-black tracking-tight text-white shadow-lg shadow-red-900/20"
+                style={{ backgroundColor: "#C92A2A", color: "#FFFFFF" }}
+              >
+                XSMB
               </div>
-              <div>
+              <div className="min-w-0">
                 <h1 className="text-lg sm:text-xl font-bold text-ink dark:text-slate-100">
-                  Thống kê GĐB XSMB — Realtime
+                  Kết quả & thống kê XSMB
                 </h1>
                 <p className="text-sm text-ink-soft dark:text-slate-400">
-                  Theo dõi 2 số cuối giải đặc biệt theo thời gian thực
+                  Đầy đủ ĐB, G1–G7 · theo dõi tần suất 2 số cuối theo thời gian thực
                 </p>
               </div>
             </div>
@@ -67,21 +70,22 @@ export function DashboardHeader({
             </dl>
           </div>
 
-          <div className="flex flex-col items-start lg:items-end gap-3">
+          <div className="flex w-full min-w-0 flex-col items-start gap-3 lg:w-auto lg:items-end">
             <div className="flex items-center gap-2">
               <StatusBadge status={status} stale={meta?.stale} />
               <ThemeToggle />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex w-full max-w-full flex-wrap items-center justify-start gap-3 lg:w-auto lg:justify-end">
               <RangeSelector value={days} onChange={onDaysChange} />
               <button
                 type="button"
                 onClick={onRefresh}
                 disabled={refreshDisabled}
+                style={{ backgroundColor: "#C92A2A", color: "#FFFFFF" }}
                 className={classNames(
-                  "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium text-white shadow-sm",
-                  "bg-brand-gradient hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed",
-                  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue",
+                  "inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium text-white shadow-sm",
+                  "bg-lotto-red hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed",
+                  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lotto-red",
                 )}
               >
                 <RefreshIcon
