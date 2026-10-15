@@ -11,6 +11,7 @@ import { prizeLabel } from "../../utils/prizes";
 import { useTheme } from "../../utils/theme";
 
 import { PartialWarning, StaleWarning } from "../../components/Alerts";
+import { AbsenceMonitor } from "../../components/AbsenceMonitor";
 import { Disclaimer } from "../../components/Disclaimer";
 import { HistoryTable } from "../../components/HistoryTable";
 import { KpiCards } from "../../components/KpiCards";
@@ -86,6 +87,13 @@ export function Dashboard(): JSX.Element {
             <>
               <StaleWarning meta={data.meta} />
               <PartialWarning meta={data.meta} />
+
+              <AbsenceMonitor
+                records={data.data}
+                frequencies={data.statistics.frequencies}
+                meta={data.meta}
+                theme={theme}
+              />
 
               <div className="mt-4 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[11rem_minmax(0,1fr)]">
                 <aside className="min-w-0 lg:sticky lg:top-4 lg:self-start">
